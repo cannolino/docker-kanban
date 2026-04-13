@@ -19,6 +19,7 @@
         @drop-card="handleDrop"
         @move-card="moveCard"
         @delete-card="deleteCard"
+        @update-card="updateCard"
       />
     </div>
 
@@ -113,14 +114,14 @@ function getColumn(columnId) {
   return state.columns.find((item) => item.id === columnId);
 }
 
-function addCard(columnId, title) {
+function addCard(columnId, title, description) {
   const column = getColumn(columnId);
   if (!column || !title?.trim()) return;
 
   column.cards.unshift({
     id: `card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     title: title.trim(),
-    description: 'Drag this card to another column or move with buttons.',
+    description: description?.trim() || 'Click edit to add a description',
   });
 }
 
@@ -129,6 +130,14 @@ function deleteCard(columnId, cardId) {
   if (!column) return;
   const index = column.cards.findIndex((card) => card.id === cardId);
   if (index !== -1) column.cards.splice(index, 1);
+}
+
+function updateCard(columnId, cardId, updates) {
+  const column = getColumn(columnId);
+  if (!column) return;
+  const card = column.cards.find((item) => item.id === cardId);
+  if (!card) return;
+  Object.assign(card, updates);
 }
 
 function handleDragStart(cardId, fromColumnId) {

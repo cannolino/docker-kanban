@@ -21,6 +21,7 @@
         @move-left="emitMove('left', card.id)"
         @move-right="emitMove('right', card.id)"
         @delete-card="emitDeleteCard"
+        @update-card="emitUpdateCard"
       />
     </div>
 
@@ -31,6 +32,12 @@
         placeholder="Add a new task"
         aria-label="New task title"
       />
+      <textarea
+        v-model="newDescription"
+        placeholder="Add description (optional)"
+        aria-label="New task description"
+        class="column__textarea"
+      ></textarea>
       <button type="submit">Add card</button>
     </form>
   </section>
@@ -55,16 +62,18 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['add-card', 'drag-start', 'drop-card', 'move-card', 'delete-card']);
+const emit = defineEmits(['add-card', 'drag-start', 'drop-card', 'move-card', 'delete-card', 'update-card']);
 
 const newTask = ref('');
+const newDescription = ref('');
 
 function submitNewCard() {
   const trimmed = newTask.value.trim();
   if (!trimmed) return;
 
-  emit('add-card', props.column.id, trimmed);
+  emit('add-card', props.column.id, trimmed, newDescription.value.trim());
   newTask.value = '';
+  newDescription.value = '';
 }
 
 function emitDragStart(cardId) {
@@ -85,6 +94,10 @@ function emitMove(direction, cardId) {
 
 function emitDeleteCard(cardId) {
   emit('delete-card', props.column.id, cardId);
+}
+
+function emitUpdateCard(cardId, updates) {
+  emit('update-card', props.column.id, cardId, updates);
 }
 </script>
 
@@ -140,6 +153,17 @@ function emitDeleteCard(cardId) {
   border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.9);
+}
+
+.column__textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 72px;
 }
 
 .column__form button {

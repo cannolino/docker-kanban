@@ -1,0 +1,120 @@
+<html>
+<head>
+    <title>Timer Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .timer-display {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .timer-time {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e40af;
+            font-family: monospace;
+        }
+        .timer-date {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .timer-current {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .start-btn {
+            background: #10b981;
+            color: white;
+        }
+        .stop-btn {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Timer Test</h1>
+    <div id="timer-test">
+        <div class="timer-display">
+            <div class="timer-time" id="timer-time">00:00:00</div>
+            <div class="timer-date" id="timer-date">Started: --</div>
+            <div class="timer-current" id="timer-current">Now: --</div>
+        </div>
+        <button class="start-btn" onclick="startTimer()">Start Timer</button>
+        <button class="stop-btn" onclick="stopTimer()">Stop Timer</button>
+    </div>
+
+    <script>
+        let startTime = null;
+        let timerInterval = null;
+        let elapsed = 0;
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function updateDisplay() {
+            document.getElementById('timer-time').textContent = formatTime(elapsed);
+            if (startTime) {
+                document.getElementById('timer-date').textContent = 'Started: ' + formatDate(new Date(startTime));
+            }
+            document.getElementById('timer-current').textContent = 'Now: ' + formatDate(new Date());
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            
+            startTime = startTime || Date.now();
+            const now = Date.now();
+            
+            timerInterval = setInterval(() => {
+                elapsed = Math.floor((Date.now() - startTime) / 1000);
+                updateDisplay();
+            }, 1000);
+            
+            updateDisplay();
+        }
+
+        function stopTimer() {
+            if (!timerInterval) return;
+            
+            clearInterval(timerInterval);
+            timerInterval = null;
+            elapsed = Math.floor((Date.now() - startTime) / 1000);
+            updateDisplay();
+            
+            console.log('Timer stopped. Duration:', elapsed, 'seconds');
+        }
+    </script>
+</body>
+</html>

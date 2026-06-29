@@ -28,10 +28,96 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue';
+import { reactive, ref, watch, provide } from 'vue';
 import KanbanColumn from './KanbanColumn.vue';
 
 const STORAGE_KEY = 'docker-kanban-state';
+
+// Timer state
+const activeTimers = ref({});
+const timerInterval = ref(null);
+
+function formatTime(seconds) {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function formatDate(date) {
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function startTimer(cardId) {
+  if (activeTimers.value[cardId]) return;
+
+  const startTime = new Date();
+  activeTimers.value[cardId] = {
+    startTime: startTime.getTime(),
+    startTimeFormatted: formatDate(startTime),
+    elapsed: 0,
+    running: true
+  };
+
+    // Start interval to update timer
+  if (!timerInterval.value) {
+    timerInterval.value = setInterval(() => {
+      Object.keys(activeTimers.value).forEach(cardId => {
+        if (activeTimers.value[cardId].running) {
+          activeTimers.value[cardId].elapsed = Math.floor((Date.now() - activeTimers.value[cardId].startTime) / 1000);
+        }
+      });
+    }, 1000);
+  }
+}
+
+function stopTimer(cardId) {
+  if (!activeTimers.value[cardId]) return;
+
+  const timer = activeTimers.value[cardId];
+  timer.running = false;
+  timer.endTime = new Date();
+  timer.endTimeFormatted = formatDate(timer.endTime);
+  timer.duration = timer.elapsed;
+
+  // Update card with timer data
+  const inProgressColumn = state.columns.find(col => col.id === 'inprogress');
+  if (inProgressColumn) {
+    const card = inProgressColumn.cards.find(c => c.id === cardId);
+    if (card) {
+      card.timerData = {
+        startTime: timer.startTime,
+        startTimeFormatted: timer.startTimeFormatted,
+        endTime: timer.endTime.getTime(),
+        endTimeFormatted: timer.endTimeFormatted,
+        duration: timer.duration,
+        durationFormatted: formatTime(timer.duration)
+      };
+    }
+  }
+
+    // Clean up if no timers are running
+  if (Object.values(activeTimers.value).every(t => !t.running)) {
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
+  }
+}
+
+function getTimerInfo(cardId) {
+  const timer = activeTimers.value[cardId];
+  if (!timer) return null;
+
+  return {
+    ...timer,
+    formattedTime: formatTime(timer.elapsed)
+  };
+}
 
 const defaultState = {
   columns: [
@@ -101,6 +187,15 @@ function loadState() {
 const state = reactive(loadState());
 const dragCard = ref(null);
 
+// Provide timer functions to child components
+provide('timerFunctions', {
+  startTimer,
+  stopTimer,
+  getTimerInfo,
+  activeTimers,
+  timerInterval
+});
+
 watch(
   () => state.columns,
   () => {
@@ -130,6 +225,15 @@ function deleteCard(columnId, cardId) {
   if (!column) return;
   const index = column.cards.findIndex((card) => card.id === cardId);
   if (index !== -1) column.cards.splice(index, 1);
+
+    // Clean up timer if card is deleted
+  if (activeTimers.value[cardId]) {
+    delete activeTimers.value[cardId];
+    if (Object.keys(activeTimers.value).length === 0 && timerInterval.value) {
+      clearInterval(timerInterval.value);
+      timerInterval.value = null;
+    }
+  }
 }
 
 function updateCard(columnId, cardId, updates) {
@@ -180,11 +284,21 @@ function moveCard(columnId, cardId, direction) {
 
   const [card] = source.cards.splice(cardIndex, 1);
   destination.cards.unshift(card);
+
+  // Stop timer if card is moved out of In Progress
+  if (source.id === 'inprogress' && activeTimers.value[cardId]) {
+    stopTimer(cardId);
+  }
 }
 
 function resetBoard() {
   localStorage.removeItem(STORAGE_KEY);
   state.columns = JSON.parse(JSON.stringify(defaultState.columns));
+  activeTimers.value = {};
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
+  }
 }
 </script>
 

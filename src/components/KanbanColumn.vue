@@ -9,20 +9,21 @@
 
     <div class="column__cards">
       <KanbanCard
-        v-for="(card, index) in column.cards"
-        :key="card.id"
-        :card="card"
-        :column-id="column.id"
-        :index="index"
-        :is-first-column="columnIndex === 0"
-        :is-last-column="columnIndex === columnsCount - 1"
-        @drag-start="emitDragStart"
-        @drop-card="emitDropCard"
-        @move-left="emitMove('left', card.id)"
-        @move-right="emitMove('right', card.id)"
-        @delete-card="emitDeleteCard"
-        @update-card="emitUpdateCard"
-      />
+              v-for="(card, index) in column.cards"
+              :key="card.id"
+              :card="card"
+              :column-id="column.id"
+              :index="index"
+              :is-first-column="columnIndex === 0"
+              :is-last-column="columnIndex === columnsCount - 1"
+              :is-in-progress="column.id === 'inprogress'"
+              @drag-start="emitDragStart"
+              @drop-card="emitDropCard"
+              @move-left="emitMove('left', card.id)"
+              @move-right="emitMove('right', card.id)"
+              @delete-card="emitDeleteCard"
+              @update-card="emitUpdateCard"
+            />
     </div>
 
     <form class="column__form" @submit.prevent="submitNewCard">

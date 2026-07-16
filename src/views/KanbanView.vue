@@ -28,11 +28,10 @@
 </template>
 
 <script setup>
-import { provide } from 'vue';
-import KanbanColumn from './KanbanColumn.vue';
-import { useBoardState } from '../composables/boardState';
-import { createTimerService } from '../composables/timerService';
-
+import { provide, computed } from 'vue';
+import KanbanColumn from '@/components/KanbanColumn.vue';
+import { useBoardState } from '@/composables/boardState';
+import { useTimerStore } from '@/stores/timer';
 const {
   state,
   dragCard,
@@ -46,36 +45,59 @@ const {
   resetBoard
 } = useBoardState();
 
-const timerService = createTimerService();
+const timerStore = useTimerStore();
+
 // Provide timer functions to child components
 provide('timerFunctions', {
-  ...timerService,
-  // Add wrapper for stopTimer that also updates card data
+  activeTimers: computed(() => timerStore.activeTimers),
+  startTimer: timerStore.startTimer,
+  pauseTimer: timerStore.pauseTimer,
+  resumeTimer: timerStore.resumeTimer,
+  continueTimer: timerStore.continueTimer,
   stopTimer: (cardId) => {
-    const timerData = timerService.stopTimer(cardId);
+    const timerData = timerStore.getTimerInfo(cardId);
+    timerStore.stopTimer(cardId);
+
     if (timerData) {
       const inProgressColumn = getColumn('inprogress');
       if (inProgressColumn) {
         const card = inProgressColumn.cards.find(c => c.id === cardId);
         if (card) {
-          card.timerData = timerData;
-        }
+          card.timerData = {
+            startTime: timerData.startTime,
+            startTimeFormatted: timerData.startTimeFormatted,
+            endTime: timerData.endTime,
+            endTimeFormatted: timerData.endTimeFormatted,
+            duration: timerData.duration,
+            durationFormatted: timerData.durationFormatted
+          };
+    }
       }
     }
-  }
+  },
+  getTimerInfo: timerStore.getTimerInfo,
+  cleanupTimer: (cardId) => {
+    // Cleanup is handled automatically in the store
+    // Just ensure we remove from active/paused timers
+    delete timerStore.activeTimers[cardId];
+    delete timerStore.pausedTimers[cardId];
+  },
+  displayLocalStorageContent: timerStore.displayLocalStorageContent
 });
 
 function handleMoveCard(columnId, cardId, direction) {
   const { source, destination, card } = moveCard(columnId, cardId, direction);
   // Stop timer if card is moved out of In Progress
-  if (source.id === 'inprogress' && timerService.activeTimers.value[cardId]) {
-    timerService.stopTimer(cardId);
+  if (source.id === 'inprogress' && timerStore.activeTimers[cardId]) {
+    timerStore.stopTimer(cardId);
   }
+  timerStore.cleanupTimer(cardId);
 }
+</script>
 
-function handleDeleteCard(columnId, cardId) {
-  deleteCard(columnId, cardId);
-  timerService.cleanupTimer(cardId);
+<script>
+export default {
+  name: 'KanbanView'
 }
 </script>
 
@@ -136,4 +158,3 @@ function handleDeleteCard(columnId, cardId) {
   background: #1e40af;
 }
 </style>
-

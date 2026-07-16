@@ -1,4 +1,22 @@
 <template>
+  <div id="app">
+    <nav>
+      <router-link to="/">Kanban</router-link> |
+      <router-link to="/about">About</router-link>
+      <router-link to="/dashboard">Dashboard</router-link> |
+    </nav>
+    <router-view/>  <!-- This is where the matched component will be rendered -->
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App'
+}
+</script>
+
+<!-- <template>
+
   <div class="app-shell">
     <header class="header">
       <div>
@@ -13,4 +31,4 @@
 
 <script setup>
 import KanbanBoard from './components/KanbanBoard.vue';
-</script>
+</script> -->

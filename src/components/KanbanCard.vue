@@ -15,6 +15,8 @@
       :isInProgress="isInProgress"
       @timer-start="handleTimerStart"
       @timer-stop="handleTimerStop"
+      @timer-pause="handleTimerPause"
+      @timer-resume="handleTimerResume"
       @add-timer="addTimerToCard"
     />
 
@@ -92,6 +94,14 @@ function handleTimerStart() {
 
 function handleTimerStop() {
   // Timer stopped event handling if needed
+}
+
+function handleTimerPause() {
+  // Timer paused event handling if needed
+}
+
+function handleTimerResume() {
+  // Timer resumed event handling if needed
 }
 </script>
 
